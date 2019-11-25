@@ -2,8 +2,8 @@
 #
 # /usr/local/etc/rc.d/rc.local:  Local initialization script.
 #
-LVMVGS="SLACKIT-142"
-EXTFSTAB="SLACKWARE-14.2"
+LVMVGS="SLACKIT-141"
+EXTFSTAB="SLACKWARE-14.1"
 
 function printmsg() {
 
@@ -47,7 +47,10 @@ for VLAN in $VLANS; do /etc/rc.d/rc.inet1 $ETHNAME.$VLAN\_start ; done
 echo "# Mounting resources..."
 for ifstab in $EXTFSTAB; do
     echo "Mounting fstab.$ifstab"    
-    mount -a -T /usr/local/etc/fstab.$ifstab
+    # hack for mounting splited fstabs (Slackware 14.1 and older)
+    cat /usr/local/etc/fstab.$ifstab | sort -r \
+	| awk 'NF && $1!~/^#/' \
+	| gawk '{ system("mount "$2 " " "$1") }'
     sleep 0.5
 done
 

@@ -1,24 +1,13 @@
 A shell script for automate the process of building 
 Slackware packages from slackbuilds.org
 
-
-The location of the retrieved source files can be set using the SVAS_DOWNLOAD,
-a subfolder is created according to the category of the package.
-
-If not defined output package is stored at /tmp, if you want to change it
-define SBo_OUTPUT, which also creates a folder structure with two
-subfolders levels first with the release version and the second as the package
-category.
-
-
-Usage: slackbuild-management.sh search|info|download|download-sources|pack|install packagename
+Usage: slackbuild-management.sh search|indo|download|pack|install packagename
   search - search for a package
-  info - show the SlackBuilds info
-  download - get SlackBuilds files
-  download-sources - get package source files
+  download - download the package files
   pack - download and build the SlackBuilds
-  install - install package
+  info - shows the SlackBuilds info
  * update - updates local SlackBuilds index
+
 
  
 Building enviroment variables:
@@ -30,4 +19,3 @@ Generates the following output:
 # Slackware package /mnt/localbuilds/./development/colordiff-1.0.15-noarch-1_SBo.tgz created.
 
  - ADDON : any additional parameters passed to PRGNAM.SlackBuild
-
