@@ -1,0 +1,98 @@
+#!/bin/sh
+#
+# /usr/local/etc/rc.d/rc.local:  Local initialization script.
+#
+LVMVGS="SLACKIT-142"
+EXTFSTAB="SLACKWARE-14.2"
+
+function printmsg() {
+
+echo "$(tput bold) # -- - - -- - - -- - - -- $(tput sgr0)"
+echo "$1"
+echo "$(tput bold) # -- - - -- - - -- - - -- $(tput sgr0)"
+
+}
+printmsg "# Starting: $(hostname)\ # Executing:"
+
+[ -x /usr/local/etc/rc.d/rc.cryptsetup ] && /usr/local/etc/rc.d/rc.cryptsetup
+
+echo "#  Preparing LVMs:"
+for vgname in $LVMVGS; do
+    echo "Changing VG state $vgname"    
+    vgchange -a y $vgname; sleep 0.5
+done
+
+################################
+#### NETWORK ###################
+################################
+echo "# Setup network ..."
+ETHNAME=eth0
+/sbin/ifconfig $ETHNAME 192.168.1.1 netmask 255.255.255.0
+
+WFNAME=wlan0
+# added default route (WFNAME)
+route add -net default gw 192.168.1.1 netmask 0.0.0.0 $WFNAME
+
+#########
+# VLAN
+#########
+modprobe 8021q
+VLANS="10 20 30 40"
+for VLAN in $VLANS; do vconfig add $ETHNAME $VLAN ; done
+for VLAN in $VLANS; do /etc/rc.d/rc.inet1 $ETHNAME.$VLAN\_start ; done
+
+
+#################################
+
+echo "# Mounting resources..."
+for ifstab in $EXTFSTAB; do
+    echo "Mounting fstab.$ifstab"    
+    mount -a -T /usr/local/etc/fstab.$ifstab
+    sleep 0.5
+done
+
+sleep 1
+
+echo "# Starting local services..."
+echo "  Starting NFS with custom ports"
+# custom ports for NFS
+[ -x /usr/local/etc/rc.d/rc.rpc ] && /usr/local/etc/rc.d/rc.rpc start
+[ -x /usr/local/etc/rc.d/rc.nfsd ] && /usr/local/etc/rc.d/rc.nfsd start
+
+sleep 2
+
+###################
+# LXC containers
+###################
+LXCS="slackware-14.1 slackware64-14.1"
+
+
+for lxcname in $LXCS; do
+    echo "Starting LXC: $LXCNAME"
+    lxc-start -n $lxcname; sleep 0.5
+done
+
+
+echo "# Configuring iptables..."
+#[ -x /usr/local/etc/rc.d/rc.firewall ] && /usr/local/etc/rc.d/rc.firewall start
+
+sleep 2
+
+# lm-sensors
+#if [ -f /etc/sysconfig/lm_sensors ]; then 
+#  for lmmod in $(grep "HWMON_MODULES=" /etc/sysconfig/lm_sensors | sed "s/^\(HWMON_MODULES=\)//" | cut  -d \" -f2 ); do modprobe  $lmmod ; done
+#fi
+
+# disable powe saving
+#echo 'on' > '/sys/bus/usb/devices/usb1/power/control';
+
+[ ! -d /root/Downloads ] && mkdir /root/Downloads; 
+[[ -d /mnt/hd/SLACK/SBo-sources  && ! -L /root/Downloads/SBo ]]  && ln -s /mnt/hd/SLACK/SBo-sources /root/Downloads/SBo
+[ ! -f /etc/rc.d/rc.local_shutdown ] && ln -s /usr/local/etc/rc.d/rc.local_shutdown-megabox /etc/rc.d/rc.local_shutdown
+
+
+BOOTLOCALLOG=$(cat $1)
+#sh /root/Documents/scripts/smtp-msg.txt "$(hostname) is now alive" "boot log:" "$BOOTLOCALLOG" & 
+
+printmsg "# $(hostname)\ # Good to go !"
+

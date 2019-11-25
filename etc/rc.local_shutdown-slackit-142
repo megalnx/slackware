@@ -1,0 +1,48 @@
+#!/bin/sh
+#
+# /usr/loca//etc/rc.d/rc.local_shutdown:  Local system shutting down script.
+#
+echo "$(tput bold) # -- - - -- - - -- - - -- $(tput sgr0)"
+echo "$(tput bold) # $(hostname) - Running shutdown script: $0 $(tput sgr0)"
+echo "$(tput bold) # -- - - -- - - -- - - -- $(tput sgr0)"
+
+LVMVGS="SLAKIT-141"
+EXTFSTAB="SLACKWARE-14.2"
+#CRYPTDEVS="sdb2_crypt"
+
+#ssh guilherme@antomic "sudo umount-http-binds.sh"
+echo "Stopping local services..."
+grep -v "^#" /usr/local/etc/rc.d/rc.local-slackit-142 | grep "start" | sed 's/start/stop/' | sort -r | sh -
+
+# stop lxc containers
+sh /usr/local/etc/rc.d/rc.lxc stop slackware-141 slackit
+
+sleep 1
+
+echo "# Unmounting resources..."
+for ifstab in $EXTFSTAB; do
+    echo "Mounting fstab.$ifstab"    
+    # hack for mounting splited fstabs (Slackware 14.1 and olde#)
+    cat /usr/local/etc/fstab.$ifstab | sort -r \
+	| awk 'NF && $1!~/^#/' \
+	| gawk '{ system("umount "$2) }'
+    sleep 0.5
+done
+
+sleep 1
+
+echo "# Disabling LVMs:"
+for vgname in $LVMVGS; do
+    echo "Changing VG state $vgname"    
+    vgchange -a n $vgname; sleep 0.5
+done
+
+for dmcrypt in $CRYPTDEVS; do
+    echo "Closeing crypt device $dmcrypt"    
+    cryptsetup luksClose $dmcrypt; sleep 0.5
+done
+
+SHUTDOWNLOG=$(cat $1)
+#sh /root/Documents/scripts/smtp-msg.txt "$(hostname) is going down:" "shutdown log:" "$SHUTDOWNLOG" &
+
+

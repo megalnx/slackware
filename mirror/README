@@ -1,0 +1,7 @@
+Slackware project and related mirror folder structure
+
+SBo                  - slackbuilds.org
+slackware            - Slackware project
+slackware-iso        - Slackware project ISO files
+slackwarearm         - Slackwarearm project
+slackware_BF2X       - bind point for Slackware releases before 2010

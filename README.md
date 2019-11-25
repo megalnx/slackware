@@ -1,0 +1,2 @@
+# Slackware
+Slackware related
